@@ -4,22 +4,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
-    
     <style>
-      body { margin: 0; }
-      /* Videonun yüklendiğini anlamak için basit bir dokunma uyarısı */
-      #overlay {
-        position: fixed; top: 10px; left: 10px; z-index: 1000;
-        color: white; background: rgba(0,0,0,0.5); padding: 10px;
-        font-family: sans-serif; border-radius: 5px; pointer-events: none;
+      body { margin: 0; overflow: hidden; }
+      /* Yüklenme durumunu görmek için basit bir yazı */
+      #status {
+        position: fixed; top: 10px; left: 10px; z-index: 9999;
+        color: white; background: rgba(0,0,0,0.7); padding: 5px 10px;
+        font-family: sans-serif; font-size: 12px;
       }
     </style>
   </head>
-
   <body>
-    <div id="overlay">Fotoğrafı tara ve videoyu başlatmak için ekrana tıkla.</div>
+    <div id="status">Sistem başlatılıyor... (Kameraya izin verin)</div>
 
-    <a-scene mindar-image="imageTargetSrc: targets (1).mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes;" 
+      vr-mode-ui="enabled: false" 
+      device-orientation-permission-ui="enabled: false">
       
       <a-assets>
         <video id="piVideo" src="yeni.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline></video>
@@ -30,15 +31,22 @@
       <a-entity mindar-image-target="targetIndex: 0">
         <a-video src="#piVideo" width="1" height="0.56" position="0 0 0"></a-video>
       </a-entity>
-
     </a-scene>
 
     <script>
-      // Mobil tarayıcı kısıtlamaları nedeniyle ilk oynatma kullanıcı tıklamasıyla olmalı
       const video = document.querySelector('#piVideo');
+      const status = document.querySelector('#status');
+
+      // Sahne yüklendiğinde mesajı güncelle
+      const sceneEl = document.querySelector('a-scene');
+      sceneEl.addEventListener("renderstart", () => {
+        status.innerText = "Kamera aktif. Fotoğrafı tarayın ve ekrana dokunun.";
+      });
+
+      // Videoyu başlatmak için tıklama şart
       window.addEventListener('click', () => {
         video.play();
-        document.getElementById('overlay').style.display = 'none';
+        status.style.display = 'none';
       });
     </script>
   </body>
