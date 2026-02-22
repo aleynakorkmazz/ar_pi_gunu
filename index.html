@@ -1,1 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    
+    <style>
+      body { margin: 0; }
+      /* Videonun yüklendiğini anlamak için basit bir dokunma uyarısı */
+      #overlay {
+        position: fixed; top: 10px; left: 10px; z-index: 1000;
+        color: white; background: rgba(0,0,0,0.5); padding: 10px;
+        font-family: sans-serif; border-radius: 5px; pointer-events: none;
+      }
+    </style>
+  </head>
 
+  <body>
+    <div id="overlay">Fotoğrafı tara ve videoyu başlatmak için ekrana tıkla.</div>
+
+    <a-scene mindar-image="imageTargetSrc: targets (1).mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <video id="piVideo" src="yeni.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-video src="#piVideo" width="1" height="0.56" position="0 0 0"></a-video>
+      </a-entity>
+
+    </a-scene>
+
+    <script>
+      // Mobil tarayıcı kısıtlamaları nedeniyle ilk oynatma kullanıcı tıklamasıyla olmalı
+      const video = document.querySelector('#piVideo');
+      window.addEventListener('click', () => {
+        video.play();
+        document.getElementById('overlay').style.display = 'none';
+      });
+    </script>
+  </body>
+</html>
