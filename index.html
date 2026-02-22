@@ -3,48 +3,57 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta charset="utf-8">
-    <title>Pi Günü AR - v1.0.4</title>
+    <title>Pi Günü AR - v1.0</title>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
+      body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
       
-      /* SAĞ ÜST KÖŞE VERSİYON ÖZELLİĞİ */
+      /* SAĞ ÜST KÖŞE VERSİYON */
       #version-tag {
-        position: fixed; top: 10px; right: 10px; z-index: 9999;
-        background: rgba(0, 0, 0, 0.8); color: #00ff00;
-        padding: 5px 12px; border-radius: 20px; font-size: 12px;
-        border: 1px solid #00ff00; pointer-events: none;
+        position: fixed; top: 15px; right: 15px; z-index: 10000;
+        background: rgba(0, 255, 0, 0.2); color: #00ff00;
+        padding: 4px 12px; border-radius: 15px; font-size: 11px;
+        border: 1px solid #00ff00; font-weight: bold;
       }
 
-      /* DURUM MESAJLARI */
-      #status-ui {
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        z-index: 9999; color: white; text-align: center;
-        background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 10px;
+      /* TARANACAK FOTOĞRAFIN ÖNİZLEMESİ (KILAVUZ) */
+      #guide-overlay {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 250px; height: auto; border: 3px solid rgba(255, 255, 255, 0.5);
+        border-radius: 10px; z-index: 9998; opacity: 0.4; pointer-events: none;
+        display: none;
       }
 
-      /* BAŞLATMA BUTONU (Beyaz ekranı aşmak için) */
+      /* BAŞLAT BUTONU */
       #start-button {
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        z-index: 10000; padding: 15px 30px; font-size: 18px;
-        background: #ff3366; color: white; border: none; border-radius: 50px;
-        cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        z-index: 10001; padding: 20px 40px; font-size: 20px;
+        background: #6200ee; color: white; border: none; border-radius: 10px;
+        cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+      }
+
+      #status-text {
+        position: fixed; bottom: 30px; width: 100%; text-align: center;
+        z-index: 9999; color: white; text-shadow: 2px 2px 4px #000;
+        display: none; font-size: 14px;
       }
     </style>
   </head>
 
   <body>
-    <div id="version-tag">Versiyon: <span id="v-num">1.0.4</span></div>
+    <div id="version-tag">Ver: <span id="v-num">1.0.0</span></div>
     
-    <button id="start-button">AR Deneyimini Başlat</button>
-
-    <div id="status-ui" style="display:none;">Kamera hazırlanıyor...</div>
+    <button id="start-button">Kamerayı Başlat</button>
+    
+    <img id="guide-overlay" src="fotoğraf.png" alt="Tarama Kılavuzu">
+    
+    <div id="status-text">Kamera hazırlanıyor...</div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
@@ -54,52 +63,61 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="target0" mindar-image-target="targetIndex: 0">
-        <a-video src="#piVideo" width="1" height="0.56" position="0 0 0"></a-video>
+      <a-entity id="piTarget" mindar-image-target="targetIndex: 0">
+        <a-video src="#piVideo" width="1" height="0.56" rotation="0 0 0" position="0 0 0"></a-video>
       </a-entity>
     </a-scene>
 
     <script>
       const sceneEl = document.querySelector('a-scene');
       const startButton = document.querySelector('#start-button');
-      const statusUi = document.querySelector('#status-ui');
+      const guide = document.querySelector('#guide-overlay');
+      const statusText = document.querySelector('#status-text');
       const video = document.querySelector('#piVideo');
 
-      // VERSİYON SİSTEMİ: Her yenilemede artan bir sayaç (localStorage kullanır)
-      let refreshCount = localStorage.getItem('refreshCount') || 0;
-      refreshCount = parseInt(refreshCount) + 1;
-      localStorage.setItem('refreshCount', refreshCount);
-      document.getElementById('v-num').innerText = `1.0.${refreshCount}`;
+      // 1. OTOMATİK VERSİYON SAYACI
+      let count = localStorage.getItem('ar_version_count') || 0;
+      count = parseInt(count) + 1;
+      localStorage.setItem('ar_version_count', count);
+      document.getElementById('v-num').innerText = `1.0.${count}`;
 
-      // BAŞLATMA MANTIĞI
+      // 2. BAŞLATMA İŞLEMİ
       startButton.addEventListener('click', () => {
         startButton.style.display = 'none';
-        statusUi.style.display = 'block';
+        guide.style.display = 'block';
+        statusText.style.display = 'block';
         
-        // AR'ı ve Videoyu başlat
+        // Mind-AR sistemini başlat
         sceneEl.systems["mindar-image-system"].start();
-        video.play();
-        video.pause(); // İlk dokunuşla yetki alıp bekletiyoruz
+        
+        // Video oynatma yetkisi al
+        video.play().then(() => {
+          video.pause();
+          statusText.innerText = "Fotoğrafı tara...";
+        }).catch(err => {
+          console.log("Video yetki hatası:", err);
+        });
       });
 
-      // Hedef bulunduğunda videoyu oynat
-      const target0 = document.querySelector('#target0');
-      target0.addEventListener("targetFound", event => {
-        console.log("Hedef bulundu");
-        statusUi.innerText = "Görsel Algılandı!";
+      // 3. HEDEF BULUNUNCA/KAYBOLUNCA
+      const piTarget = document.querySelector('#piTarget');
+      
+      piTarget.addEventListener("targetFound", () => {
+        guide.style.display = 'none'; // Hedef bulununca kılavuzu gizle
+        statusText.innerText = "Pi Günü Kutlu Olsun!";
         video.play();
       });
 
-      target0.addEventListener("targetLost", event => {
-        console.log("Hedef kayboldu");
-        statusUi.innerText = "Fotoğrafı aramaya devam et...";
+      piTarget.addEventListener("targetLost", () => {
+        guide.style.display = 'block'; // Hedef kaybolunca kılavuzu geri getir
+        statusText.innerText = "Fotoğrafı tekrar tara...";
         video.pause();
       });
 
-      // Hata kontrolü
-      sceneEl.addEventListener("arError", (event) => {
-        statusUi.innerText = "Hata: Kamera başlatılamadı!";
-        statusUi.style.background = "red";
+      // Hata Ayıklama
+      sceneEl.addEventListener("arError", () => {
+        statusText.innerText = "Hata: Kamera izni verilmedi!";
+        statusText.style.color = "red";
       });
     </script>
   </body>
