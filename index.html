@@ -14,7 +14,6 @@
             overflow: hidden; 
         }
         
-        /* Sağ üst köşedeki versiyon bilgisi için tasarım */
         #version-badge {
             position: absolute;
             top: 15px;
@@ -26,25 +25,22 @@
             font-size: 14px;
             font-weight: bold;
             border-radius: 8px;
-            z-index: 9999; /* Kameranın ve AR elementlerinin üzerinde kalmasını sağlar */
+            z-index: 9999;
             pointer-events: none;
         }
     </style>
 
     <script>
-        // Fotoğraf (target) kamerada bulunduğunda ve kaybedildiğinde videoyu kontrol eden script
         AFRAME.registerComponent('video-controller', {
             init: function () {
                 const target = this.el;
                 const video = document.querySelector('#ar-video');
 
-                // Görsel bulunduğunda videoyu oynat
                 target.addEventListener('targetFound', event => {
                     console.log("Hedef görsel bulundu, video başlıyor...");
                     video.play();
                 });
 
-                // Görsel kameradan çıkınca videoyu durdur
                 target.addEventListener('targetLost', event => {
                     console.log("Hedef kaybedildi, video duraklatıldı.");
                     video.pause();
@@ -57,10 +53,10 @@
 
     <div id="version-badge">v1.0.0</div>
 
-    <a-scene mindar-image="imageTargetSrc: targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: pigunu/targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
 
         <a-assets>
-            <video id="ar-video" src="yeni.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+            <video id="ar-video" src="pigunu/yeni.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
