@@ -2,23 +2,49 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8">
+    <title>Pi Günü AR - v1.0.4</title>
+    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    
     <style>
-      body { margin: 0; overflow: hidden; }
-      /* Yüklenme durumunu görmek için basit bir yazı */
-      #status {
-        position: fixed; top: 10px; left: 10px; z-index: 9999;
-        color: white; background: rgba(0,0,0,0.7); padding: 5px 10px;
-        font-family: sans-serif; font-size: 12px;
+      body { margin: 0; overflow: hidden; font-family: sans-serif; }
+      
+      /* SAĞ ÜST KÖŞE VERSİYON ÖZELLİĞİ */
+      #version-tag {
+        position: fixed; top: 10px; right: 10px; z-index: 9999;
+        background: rgba(0, 0, 0, 0.8); color: #00ff00;
+        padding: 5px 12px; border-radius: 20px; font-size: 12px;
+        border: 1px solid #00ff00; pointer-events: none;
+      }
+
+      /* DURUM MESAJLARI */
+      #status-ui {
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        z-index: 9999; color: white; text-align: center;
+        background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 10px;
+      }
+
+      /* BAŞLATMA BUTONU (Beyaz ekranı aşmak için) */
+      #start-button {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        z-index: 10000; padding: 15px 30px; font-size: 18px;
+        background: #ff3366; color: white; border: none; border-radius: 50px;
+        cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       }
     </style>
   </head>
+
   <body>
-    <div id="status">Sistem başlatılıyor... (Kameraya izin verin)</div>
+    <div id="version-tag">Versiyon: <span id="v-num">1.0.4</span></div>
+    
+    <button id="start-button">AR Deneyimini Başlat</button>
+
+    <div id="status-ui" style="display:none;">Kamera hazırlanıyor...</div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: yes;" 
+      mindar-image="imageTargetSrc: targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
       vr-mode-ui="enabled: false" 
       device-orientation-permission-ui="enabled: false">
       
@@ -28,25 +54,52 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity id="target0" mindar-image-target="targetIndex: 0">
         <a-video src="#piVideo" width="1" height="0.56" position="0 0 0"></a-video>
       </a-entity>
     </a-scene>
 
     <script>
-      const video = document.querySelector('#piVideo');
-      const status = document.querySelector('#status');
-
-      // Sahne yüklendiğinde mesajı güncelle
       const sceneEl = document.querySelector('a-scene');
-      sceneEl.addEventListener("renderstart", () => {
-        status.innerText = "Kamera aktif. Fotoğrafı tarayın ve ekrana dokunun.";
+      const startButton = document.querySelector('#start-button');
+      const statusUi = document.querySelector('#status-ui');
+      const video = document.querySelector('#piVideo');
+
+      // VERSİYON SİSTEMİ: Her yenilemede artan bir sayaç (localStorage kullanır)
+      let refreshCount = localStorage.getItem('refreshCount') || 0;
+      refreshCount = parseInt(refreshCount) + 1;
+      localStorage.setItem('refreshCount', refreshCount);
+      document.getElementById('v-num').innerText = `1.0.${refreshCount}`;
+
+      // BAŞLATMA MANTIĞI
+      startButton.addEventListener('click', () => {
+        startButton.style.display = 'none';
+        statusUi.style.display = 'block';
+        
+        // AR'ı ve Videoyu başlat
+        sceneEl.systems["mindar-image-system"].start();
+        video.play();
+        video.pause(); // İlk dokunuşla yetki alıp bekletiyoruz
       });
 
-      // Videoyu başlatmak için tıklama şart
-      window.addEventListener('click', () => {
+      // Hedef bulunduğunda videoyu oynat
+      const target0 = document.querySelector('#target0');
+      target0.addEventListener("targetFound", event => {
+        console.log("Hedef bulundu");
+        statusUi.innerText = "Görsel Algılandı!";
         video.play();
-        status.style.display = 'none';
+      });
+
+      target0.addEventListener("targetLost", event => {
+        console.log("Hedef kayboldu");
+        statusUi.innerText = "Fotoğrafı aramaya devam et...";
+        video.pause();
+      });
+
+      // Hata kontrolü
+      sceneEl.addEventListener("arError", (event) => {
+        statusUi.innerText = "Hata: Kamera başlatılamadı!";
+        statusUi.style.background = "red";
       });
     </script>
   </body>
